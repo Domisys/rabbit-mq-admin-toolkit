@@ -3,6 +3,7 @@
 namespace Bab\RabbitMq\HttpClient;
 
 use Bab\RabbitMq\HttpClient;
+use Bab\RabbitMq\Response;
 
 class CurlClient implements HttpClient
 {
@@ -58,7 +59,7 @@ class CurlClient implements HttpClient
         
         curl_close($handle);
         
-        return $response;
+        return new Response($httpCode, $response);
     }
 
     protected function getHandle()
