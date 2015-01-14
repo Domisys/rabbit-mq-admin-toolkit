@@ -12,7 +12,7 @@ class CurlClient implements HttpClient
     private $user;
     private $pass;
     
-    public function __construct($host, $port, $user, $pass)
+    public function __construct($scheme, $host, $port, $user, $pass)
     {
         $this->host = $host;
         $this->port = $port;
