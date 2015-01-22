@@ -16,7 +16,7 @@ class BaseCommand extends Command
     protected function configure()
     {
         $this
-            ->addOption('host', 'H', InputOption::VALUE_REQUIRED, 'Which host?', '127.0.0.1')
+            ->addOption('host', 'H', InputOption::VALUE_OPTIONAL, 'Which host?', '127.0.0.1')
             ->addOption('scheme', 's', InputOption::VALUE_OPTIONAL, 'Which protocol scheme ? (http(s))')
             ->addOption('user', 'u', InputOption::VALUE_REQUIRED, 'Which user?', 'guest')
             ->addOption('password', 'p', InputOption::VALUE_REQUIRED, 'Which password? If nothing provided, password is asked', null)
@@ -45,8 +45,13 @@ class BaseCommand extends Command
             'vhost'  => $vhost,
         );
 
+        return $this->instanciateVhostManager($input, $output, $context);
+    }
+
+    protected function instanciateVhostManager(InputInterface $input, OutputInterface $output, array $context)
+    {
         $logger = new CliLogger($output);
-        $httpClient = new GuzzleClient($context['scheme'], $context['host'], $context['port'], $context['user'], $context['pass']);
+        $httpClient = $this->getHttpClient($context);
 
         if ($input->getOption('dry-run')) {
             $action = new Action\DryRunAction($httpClient);
@@ -59,6 +64,11 @@ class BaseCommand extends Command
         $vhostManager->setLogger($logger);
 
         return $vhostManager;
+    }
+
+    protected function getHttpClient(array $context)
+    {
+        return new GuzzleClient($context['scheme'], $context['host'], $context['port'], $context['user'], $context['pass']);
     }
 
     /**

@@ -2,6 +2,8 @@
 
 namespace Bab\RabbitMq\Action;
 
+use Bab\RabbitMq\Response;
+
 class RealAction extends Action
 {
     public function resetVhost()
@@ -20,18 +22,32 @@ class RealAction extends Action
 
         $this->query('PUT', '/api/vhosts/'.$vhost);
 
-        $this->log(sprintf(
-            'Grant all permission for <info>%s</info> on vhost <info>%s</info>',
-            $user,
-            $vhost
-        ));
-
-        $this->query('PUT', '/api/permissions/'.$vhost.'/'.$user, array(
-            'scope'     => 'client',
+        $this->setPermissions($user, array(
             'configure' => '.*',
             'write'     => '.*',
             'read'      => '.*',
         ));
+    }
+
+    public function removePolicies()
+    {
+        $vhost = $this->getContextValue('vhost');
+
+        $this->log(sprintf('Delete policies of vhost: <info>%s</info>', $vhost));
+
+        try {
+            $response = $this->query('GET', '/api/policies/'.$vhost);
+            if ($response instanceof Response) {
+                $policies = json_decode($response->body, true);
+                foreach ($policies as $policy) {
+                    $policyName = $policy['name'];
+                    $this->query('DELETE', '/api/policies/'.$vhost.'/'.$policyName);
+                    $this->log(sprintf('Delete policy: <info>%s</info>', $policyName));
+                }
+            }
+        } catch (\Exception $e) {
+            $this->log('<comment>No policy to delete</comment>');
+        }
     }
 
     public function createExchange($name, $parameters)
@@ -83,5 +99,37 @@ class RealAction extends Action
     public function purge($queue)
     {
         return $this->query('DELETE', '/api/queues/'.$this->getContextValue('vhost').'/'.$queue.'/contents');
+    }
+
+    public function createPolicy($name, array $parameters = array())
+    {
+        $this->log(sprintf(
+            'Create policy <info>%s</info> with following definition <info>%s</info>',
+            $name,
+            json_encode($parameters)
+        ));
+
+        $this->query('PUT', '/api/policies/'.$this->getContextValue('vhost').'/'.$name, $parameters);
+    }
+
+    public function createUser($name, array $parameters = array())
+    {
+        $this->log(sprintf('Create user <info>%s</info>', $name));
+        $this->query('PUT', '/api/users/'.$name, $parameters);
+    }
+
+    public function setUpstreamConfiguration($host, $targetedHost, $vhost, array $parameters = array())
+    {
+        $this->httpClient->switchHost($host);
+        $this->log(sprintf('Create upstream configuration <info>%s</info> on host <info>%s</info>', json_encode($parameters), $host));
+        $this->query(
+            'PUT',
+            sprintf(
+                '/api/parameters/federation-upstream/%s/%s',
+                $vhost,
+                $targetedHost
+            ),
+            $parameters
+        );
     }
 }

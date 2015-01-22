@@ -15,11 +15,11 @@ class VhostManager
 
     public function __construct(array $context, ActionInterface $action, HttpClientInterface $httpClient)
     {
-        if ('/' === $context['vhost']) {
+        if (isset($context['vhost']) && '/' === $context['vhost']) {
             $context['vhost'] = '%2f';
         }
         $this->credentials = $context;
-        
+
         $this->action = $action;
         $this->action->setContext($context);
 
@@ -37,6 +37,16 @@ class VhostManager
         $this->action->resetVhost();
     }
 
+    public function createUsers(Collection\User $userCollection)
+    {
+        $this->action->createUsers($userCollection);
+    }
+
+    public function setUpstreamConfiguration($host, $targetedHost, $vhost, $parameters)
+    {
+        $this->action->setUpstreamConfiguration($host, $targetedHost, $vhost, $parameters);
+    }
+
     /**
      * createMapping
      *
@@ -46,14 +56,11 @@ class VhostManager
      */
     public function createMapping(ConfigurationInterface $config)
     {
-        $this->action->startMapping();
-
         $this->createBaseStructure($config);
         $this->createExchanges($config);
         $this->createQueues($config);
         $this->setPermissions($config);
-
-        $this->action->endMapping();
+        $this->setPolicies($config);
     }
 
     private function createBaseStructure(ConfigurationInterface $config)
@@ -73,7 +80,13 @@ class VhostManager
 
     private function createExchanges(ConfigurationInterface $config)
     {
-        foreach ($config['exchanges'] as $name => $parameters) {
+        $exchanges = array();
+
+        if (!empty($config['exchanges'])) {
+            $exchanges = $config['exchanges'];
+        }
+
+        foreach ($exchanges as $name => $parameters) {
             $currentWithUnroutable = $config->hasUnroutableExchange();
 
             if (isset($parameters['with_unroutable'])) {
@@ -95,11 +108,11 @@ class VhostManager
     private function createQueues(ConfigurationInterface $config)
     {
         $queues = array();
-        
+
         if (!empty($config['queues'])) {
             $queues = $config['queues'];
         }
-        
+
         foreach ($queues as $name => $parameters) {
             $currentWithDl = $config->hasDeadLetterExchange();
             $retries = array();
@@ -391,6 +404,39 @@ class VhostManager
         }
 
         return $permissions;
+    }
+
+    private function setPolicies(ConfigurationInterface $config)
+    {
+        if (!empty($config['policies'])) {
+            foreach ($config['policies'] as $policyName => $parameters) {
+                $parameters = $this->extractPolicyParameters($parameters);
+                $this->action->createPolicy($policyName, $parameters);
+            }
+        }
+    }
+
+    private function extractPolicyParameters(array $parameters = array())
+    {
+        $allowedParameters = array(
+            'pattern' => '',
+            'definition' => array(),
+            'priority' => 0,
+            'apply-to' => 'all',
+        );
+
+        foreach (array_keys($allowedParameters) as $parameter) {
+            if (isset($parameters[$parameter])) {
+                $allowedParameters[$parameter] = $parameters[$parameter];
+            }
+        }
+
+        return $allowedParameters;
+    }
+
+    public function removePolicies()
+    {
+        $this->action->removePolicies();
     }
 
     /**

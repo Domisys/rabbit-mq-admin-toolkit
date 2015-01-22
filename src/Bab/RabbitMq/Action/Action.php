@@ -5,6 +5,8 @@ namespace Bab\RabbitMq\Action;
 use Bab\RabbitMq\HttpClientInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
+use Bab\RabbitMq\Collection;
+use Bab\RabbitMq\Entity;
 
 abstract class Action implements \Bab\RabbitMq\ActionInterface
 {
@@ -19,19 +21,29 @@ abstract class Action implements \Bab\RabbitMq\ActionInterface
         $this->logger = new NullLogger();
     }
 
-    public function startMapping()
-    {
-    }
-
-    public function endMapping()
-    {
-    }
-
     public function setContext(array $context = array())
     {
         $this->context = $context;
 
         return $this;
+    }
+
+    public function createUsers(Collection\User $userCollection)
+    {
+        $users = $userCollection->getUsers();
+
+        foreach ($users as $user) {
+            if ($user instanceof Entity\User) {
+                $userTags = $user->getTags();
+                $parameters = array(
+                    'password' => $user->getPassword(),
+                    'tags' => empty($userTags) ? '' : $userTags,
+                );
+
+                $this->createUser($user->getLogin(), $parameters);
+                $this->setPermissions($user->getLogin(), $user->getPermissions());
+            }
+        }
     }
 
     protected function query($verb, $uri, array $parameters = null)

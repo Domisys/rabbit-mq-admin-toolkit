@@ -5,6 +5,7 @@ use Bab\RabbitMq\HttpClientInterface;
 use Bab\RabbitMq\Response;
 use GuzzleHttp\Client;
 use GuzzleHttp\Message\Request;
+use GuzzleHttp;
 
 class GuzzleClient implements HttpClientInterface
 {
@@ -26,13 +27,20 @@ class GuzzleClient implements HttpClientInterface
 
         $this->enableDryRun(false);
 
-        $this->client = new Client([
-            'base_url' => $this->formatBaseUrl(),
-            'defaults' => [
-                'auth' => [$this->user, $this->pass],
-                'headers' => ['Content-Type' => 'application/json'],
-            ],
-        ]);
+        $this->initializeClient();
+    }
+
+    private function initializeClient()
+    {
+        if (!empty($this->host)) {
+            $this->client = new Client([
+                'base_url' => $this->formatBaseUrl(),
+                'defaults' => [
+                    'auth' => [$this->user, $this->pass],
+                    'headers' => ['Content-Type' => 'application/json'],
+                ],
+            ]);
+        }
     }
 
     private function formatBaseUrl()
@@ -57,9 +65,8 @@ class GuzzleClient implements HttpClientInterface
 
     public function query($verb, $uri, array $parameters = null)
     {
-        if ($this->dryRunModeEnabled === true && $verb !== 'GET') {
-            throw new \RuntimeException('Dry run mode must only accept GET requests');
-        }
+        $this->ensureValidGuzzleClient();
+        $this->ensureValidDryRunQuery($verb);
 
         if (!empty($parameters)) {
             $parameters = json_encode($parameters);
@@ -90,5 +97,27 @@ class GuzzleClient implements HttpClientInterface
     public function enableDryRun($enabled = false)
     {
         $this->dryRunModeEnabled = $enabled;
+    }
+
+    public function switchHost($host)
+    {
+        $this->host = $host;
+        $this->initializeClient();
+
+        return $this;
+    }
+
+    private function ensureValidGuzzleClient()
+    {
+        if (!$this->client instanceof GuzzleHttp\Client) {
+            throw new \RuntimeException('Guzzle Client not initialize. Do you provide an host value ?');
+        }
+    }
+
+    private function ensureValidDryRunQuery($verb)
+    {
+        if ($this->dryRunModeEnabled === true && $verb !== 'GET') {
+            throw new \RuntimeException('Dry run mode must only accept GET requests');
+        }
     }
 }
