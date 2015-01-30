@@ -42,8 +42,8 @@ class FederationConfigurationCommand extends BaseCommand
         $context = array(
             'host'   => null,
             'scheme' => $input->getOption('scheme'),
-            'user'   => $input->getOption('user'),
-            'pass'   => $this->getPassword($input, $output),
+            'user'   => $this->getAdminLogin($input, $config),
+            'pass'   => $this->getAdminPassword($input, $output, $config),
             'port'   => $input->getOption('port'),
         );
 
@@ -149,5 +149,29 @@ class FederationConfigurationCommand extends BaseCommand
     private function isFederationEnabled(\Puzzle\Configuration $config)
     {
         return $config->read('global/federation/enabled') === true;
+    }
+
+    private function getAdminLogin(InputInterface $input, \Puzzle\Configuration $config)
+    {
+        $adminUser = $config->read('global/admin/login');
+
+        if(empty($adminUser))
+        {
+            $adminUser = $input->getOption('user');
+        }
+
+        return $adminUser;
+    }
+
+    protected function getAdminPassword(InputInterface $input, OutputInterface $output, \Puzzle\Configuration $config)
+    {
+        $adminPassword = $config->read('global/admin/password');
+
+        if(empty($adminPassword))
+        {
+            $adminPassword = parent::getPassword($input, $output);
+        }
+
+        return $adminPassword;
     }
 }
