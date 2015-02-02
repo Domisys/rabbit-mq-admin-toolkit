@@ -47,6 +47,25 @@ class FederationConfigurationCommand extends BaseCommand
             'port'   => $input->getOption('port'),
         );
 
+
+        $allVhosts = $this->getAllVhosts($locations, $config);
+
+
+        foreach($locations->getClusters() as $cluster) {
+            $context['host'] = $cluster;
+
+            foreach($allVhosts as $vhost) {
+                $context['vhost'] = $vhost;
+                $vhostManager = $this->instanciateVhostManager($input, $output, $context);
+
+                if ($resetConfiguration === true) {
+                    $vhostManager->resetVhost();
+                }
+
+                $vhostManager->createUsers($userCollection);
+            }
+        }
+
         foreach ($locations->getLocations() as $location) {
             foreach ($locations->getClusterByLocation($location) as $cluster) {
                 $context['host'] = $cluster;
@@ -55,12 +74,6 @@ class FederationConfigurationCommand extends BaseCommand
                 foreach (array_keys($vhostsConfiguration) as $vhost) {
                     $context['vhost'] = $vhost;
                     $vhostManager = $this->instanciateVhostManager($input, $output, $context);
-
-                    if ($resetConfiguration === true) {
-                        $vhostManager->resetVhost();
-                    }
-
-                    $vhostManager->createUsers($userCollection);
 
                     if ($this->isFederationEnabled($config) === true) {
                         $this->createMapping($vhostManager, $this->constructFilePath($configDirectory, 'shared.yml'));
@@ -74,6 +87,21 @@ class FederationConfigurationCommand extends BaseCommand
         if (isset($vhostManager) && $vhostManager instanceof VhostManager) {
             $this->setFederationConfiguration($vhostManager, $locations, $config, $context);
         }
+    }
+
+    private function getAllVhosts(Collection\Location $locations, \Puzzle\Configuration $config)
+    {
+        $vhosts = array();
+        foreach ($locations->getLocations() as $location) {
+            foreach ($locations->getClusterByLocation($location) as $cluster) {
+                $vhostsConfiguration = $config->readRequired($location);
+                foreach (array_keys($vhostsConfiguration) as $vhost) {
+                    $vhosts[] = $vhost;
+                }
+            }
+        }
+
+        return array_unique($vhosts);
     }
 
     private function ensureValidConfiguration(Collection\Location $locations, \Puzzle\Configuration $config)
