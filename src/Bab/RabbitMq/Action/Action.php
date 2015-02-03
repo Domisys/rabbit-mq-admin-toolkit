@@ -5,6 +5,9 @@ namespace Bab\RabbitMq\Action;
 use Bab\RabbitMq\HttpClientInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
+use Bab\RabbitMq\Collection;
+use Bab\RabbitMq\Entity;
+use Bab\RabbitMq\Response;
 
 abstract class Action implements \Bab\RabbitMq\ActionInterface
 {
@@ -19,19 +22,42 @@ abstract class Action implements \Bab\RabbitMq\ActionInterface
         $this->logger = new NullLogger();
     }
 
-    public function startMapping()
-    {
-    }
-
-    public function endMapping()
-    {
-    }
-
     public function setContext(array $context = array())
     {
         $this->context = $context;
 
         return $this;
+    }
+
+    public function createUsers(Collection\User $userCollection)
+    {
+        $users = $userCollection->getUsers();
+
+        foreach ($users as $user) {
+            if ($user instanceof Entity\User) {
+                if($user->hasToBeOverwriten() === true && $this->isExistingUser($user) === true) {
+                    $userTags = $user->getTags();
+                    $parameters = array(
+                        'password' => $user->getPassword(),
+                        'tags' => empty($userTags) ? '' : $userTags,
+                    );
+
+                    $this->createUser($user->getLogin(), $parameters);
+                }
+
+                $this->setPermissions($user->getLogin(), $user->getPermissions());
+            }
+        }
+    }
+
+    private function isExistingUser(Entity\User $user)
+    {
+        try {
+            $response = $this->query('GET', 'api/users/'.$user->getLogin());
+            return ($response instanceof Response && $response->isSuccessful());
+        } catch(\Exception $e) {
+            return false;
+        }
     }
 
     protected function query($verb, $uri, array $parameters = null)

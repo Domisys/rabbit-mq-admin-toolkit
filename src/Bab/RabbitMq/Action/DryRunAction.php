@@ -11,6 +11,9 @@ class DryRunAction extends Action
     const LABEL_QUEUE = 'queue';
     const LABEL_BINDING = 'binding';
     const LABEL_PERMISSION = 'permission';
+    const LABEL_POLICY = 'policy';
+    const LABEL_USER = 'user';
+    const LABEL_UPSTREAM = 'upstream';
 
     private $log;
 
@@ -23,7 +26,7 @@ class DryRunAction extends Action
         $this->httpClient->enableDryRun(true);
     }
 
-    public function endMapping()
+    public function __destruct()
     {
         $this->log->setLogger($this->logger);
         $this->log->output();
@@ -43,6 +46,11 @@ class DryRunAction extends Action
             $user,
             $vhost
         ));
+    }
+
+    public function removePolicies()
+    {
+        $this->log(sprintf('Will Delete policies: <info>%s</info>', $this->getContextValue('vhost')));
     }
 
     public function createExchange($name, $parameters)
@@ -67,10 +75,11 @@ class DryRunAction extends Action
         $binding = array(
             'source' => $name,
             'destination' => $queue,
-            'vhost' => $vhost,
+            'vhost' => $vhost === '%2f' ? '/' : $vhost,
             'routing_key' => is_null($routingKey) ? '' : $routingKey,
-            'arguments' => $arguments
+            'arguments' => $arguments,
         );
+
 
         if (!$response->isSuccessful()) {
             $this->log->addUpdate(self::LABEL_BINDING, $name.':'.$routingKey.' -> '.$queue, $arguments);
@@ -163,5 +172,63 @@ class DryRunAction extends Action
         }
 
         return $difference;
+    }
+
+    public function createPolicy($name, array $parameters = array())
+    {
+        $currentPolicy = $this->query('GET', '/api/policies/'.$this->getContextValue('vhost').'/'.$name);
+        $objectType = self::LABEL_POLICY;
+
+        if ($currentPolicy instanceof Response) {
+            $configurationDelta = $this->array_diff_assoc_recursive($parameters, json_decode($currentPolicy->body, true));
+            if ($currentPolicy->isNotFound() || !empty($configurationDelta)) {
+                $this->log->addUpdate($objectType, $name, $parameters);
+
+                return;
+            }
+
+            $this->log->addUnchanged($objectType, $name, $parameters);
+        }
+    }
+
+    public function createUser($name, array $parameters = array())
+    {
+        $response = $this->query('GET', '/api/users/'.$name);
+        $objectType = self::LABEL_USER;
+
+        if ($response instanceof $response) {
+            if ($response->isNotFound()) {
+                $this->log->addUpdate($objectType, $name, $parameters);
+
+                return;
+            }
+            //No unchanged log could be sent. We cannot compare a password and the hashed persisted one.
+        }
+    }
+
+    public function setUpstreamConfiguration($host, $targetedHost, $vhost, array $parameters = array())
+    {
+        $this->httpClient->switchHost($host);
+        $currentComponent = $this->query(
+            'GET',
+            sprintf(
+                '/api/parameters/federation-upstream/%s/%s',
+                $vhost,
+                $targetedHost
+            )
+        );
+        $objectType = self::LABEL_UPSTREAM;
+        $objectName = $targetedHost;
+
+        if ($currentComponent instanceof Response && $currentComponent->isSuccessful() === true) {
+            $currentComponent = json_decode($currentComponent->body, true);
+            $configurationDelta = $this->array_diff_assoc_recursive($parameters, $currentComponent);
+            if (!empty($configurationDelta)) {
+                $this->log->addUpdate($objectType, $objectName, $parameters);
+                return;
+            }
+
+            $this->log->addUnchanged($objectType, $objectName, $parameters);
+        }
     }
 }

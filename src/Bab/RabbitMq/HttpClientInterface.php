@@ -9,4 +9,6 @@ interface HttpClientInterface
     public function query($verb, $uri, array $parameters = null);
 
     public function enableDryRun($enabled = false);
+
+    public function switchHost($host);
 }

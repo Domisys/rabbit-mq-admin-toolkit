@@ -45,8 +45,13 @@ class BaseCommand extends Command
             'vhost'  => $vhost,
         );
 
+        return $this->instanciateVhostManager($input, $output, $context);
+    }
+
+    protected function instanciateVhostManager(InputInterface $input, OutputInterface $output, array $context)
+    {
         $logger = new CliLogger($output);
-        $httpClient = new GuzzleClient($context['scheme'], $context['host'], $context['port'], $context['user'], $context['pass']);
+        $httpClient = $this->getHttpClient($context);
 
         if ($input->getOption('dry-run')) {
             $action = new Action\DryRunAction($httpClient);
@@ -59,6 +64,11 @@ class BaseCommand extends Command
         $vhostManager->setLogger($logger);
 
         return $vhostManager;
+    }
+
+    protected function getHttpClient(array $context)
+    {
+        return new GuzzleClient($context['scheme'], $context['host'], $context['port'], $context['user'], $context['pass']);
     }
 
     /**
