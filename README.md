@@ -124,6 +124,8 @@ users:
     -
       login: johnDoe
       password: johnPassword
+      tags: monitoring
+      overwrite: false # true if you want to overwrite the password and tags existing definition. Permissions will always be overwriten.
       permissions: # you can override default user permissions as well
           configure: .*
           read: .*

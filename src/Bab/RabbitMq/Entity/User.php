@@ -8,6 +8,7 @@ class User
     private $password;
     private $permissions;
     private $tags;
+    private $overwrite;
 
     public function __construct(array $user, array $defaultPermissions)
     {
@@ -15,6 +16,8 @@ class User
         $this->password = $this->getUserValue($user, 'password');
         $this->permissions = $this->extractPermissions($this->getUserValue($user, 'permissions'), $defaultPermissions);
         $this->tags = $this->getUserValue($user, 'tags');
+        $overwrite = $this->getUserValue($user, 'overwrite');
+        $this->overwrite = !is_null($overwrite)?$overwrite:true;
     }
 
     private function getUserValue(array $user = array(), $key)
@@ -44,6 +47,11 @@ class User
     public function getTags()
     {
         return $this->tags;
+    }
+
+    public function hasToBeOverwriten()
+    {
+        return $this->overwrite;
     }
 
     private function extractPermissions($userPermissions, array $permissions)
