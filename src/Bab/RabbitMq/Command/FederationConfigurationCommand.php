@@ -47,9 +47,7 @@ class FederationConfigurationCommand extends BaseCommand
             'port'   => $input->getOption('port'),
         );
 
-
         $allVhosts = $this->getAllVhosts($locations, $config);
-
 
         foreach($locations->getClusters() as $cluster) {
             $context['host'] = $cluster;
@@ -75,10 +73,7 @@ class FederationConfigurationCommand extends BaseCommand
                     $context['vhost'] = $vhost;
                     $vhostManager = $this->instanciateVhostManager($input, $output, $context);
 
-                    if ($this->isFederationEnabled($config) === true) {
-                        $this->createMapping($vhostManager, $this->constructFilePath($configDirectory, 'shared.yml'));
-                    }
-
+                    $this->createMapping($vhostManager, $this->constructFilePath($configDirectory, 'shared.yml'));
                     $this->createMapping($vhostManager, $this->constructFilePath($configDirectory, $location.'.yml'));
                 }
             }
@@ -92,12 +87,16 @@ class FederationConfigurationCommand extends BaseCommand
     private function getAllVhosts(Collection\Location $locations, \Puzzle\Configuration $config)
     {
         $vhosts = array();
+
+        foreach(array_keys($config->readRequired('shared')) as $vhost)
+        {
+            $vhosts[] = $vhost;
+        }
+
         foreach ($locations->getLocations() as $location) {
-            foreach ($locations->getClusterByLocation($location) as $cluster) {
-                $vhostsConfiguration = $config->readRequired($location);
-                foreach (array_keys($vhostsConfiguration) as $vhost) {
-                    $vhosts[] = $vhost;
-                }
+            $vhostsConfiguration = $config->readRequired($location);
+            foreach (array_keys($vhostsConfiguration) as $vhost) {
+                $vhosts[] = $vhost;
             }
         }
 
@@ -108,10 +107,7 @@ class FederationConfigurationCommand extends BaseCommand
     {
         try {
             $config->readRequired('global');
-
-            if ($this->isFederationEnabled($config) === true) {
-                $config->readRequired('shared');
-            }
+            $config->readRequired('shared');
 
             foreach ($locations->getLocations() as $location) {
                 $config->readRequired($location);
