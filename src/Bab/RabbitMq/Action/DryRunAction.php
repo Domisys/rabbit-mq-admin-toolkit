@@ -80,9 +80,9 @@ class DryRunAction extends Action
             'arguments' => $arguments,
         );
 
-
         if (!$response->isSuccessful()) {
             $this->log->addUpdate(self::LABEL_BINDING, $name.':'.$routingKey.' -> '.$queue, $arguments);
+
             return;
         }
 
@@ -92,6 +92,7 @@ class DryRunAction extends Action
 
             if (empty($configurationDelta)) {
                 $this->log->addUnchanged(self::LABEL_BINDING, $name.':'.$routingKey.' -> '.$queue, $arguments);
+
                 return;
             }
         }
@@ -149,7 +150,6 @@ class DryRunAction extends Action
         }
 
         $this->log->addUnchanged($objectType, $objectName, $parameters);
-
     }
 
     private function array_diff_assoc_recursive(array $arrayA, array $arrayB)
@@ -225,6 +225,7 @@ class DryRunAction extends Action
             $configurationDelta = $this->array_diff_assoc_recursive($parameters, $currentComponent);
             if (!empty($configurationDelta)) {
                 $this->log->addUpdate($objectType, $objectName, $parameters);
+
                 return;
             }
 

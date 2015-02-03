@@ -49,10 +49,10 @@ class FederationConfigurationCommand extends BaseCommand
 
         $allVhosts = $this->getAllVhosts($locations, $config);
 
-        foreach($locations->getClusters() as $cluster) {
+        foreach ($locations->getClusters() as $cluster) {
             $context['host'] = $cluster;
 
-            foreach($allVhosts as $vhost) {
+            foreach ($allVhosts as $vhost) {
                 $context['vhost'] = $vhost;
                 $vhostManager = $this->instanciateVhostManager($input, $output, $context);
 
@@ -88,8 +88,7 @@ class FederationConfigurationCommand extends BaseCommand
     {
         $vhosts = array();
 
-        foreach(array_keys($config->readRequired('shared')) as $vhost)
-        {
+        foreach (array_keys($config->readRequired('shared')) as $vhost) {
             $vhosts[] = $vhost;
         }
 
@@ -179,8 +178,7 @@ class FederationConfigurationCommand extends BaseCommand
     {
         $adminUser = $config->read('global/admin/login');
 
-        if(empty($adminUser))
-        {
+        if (empty($adminUser)) {
             $adminUser = $input->getOption('user');
         }
 
@@ -191,8 +189,7 @@ class FederationConfigurationCommand extends BaseCommand
     {
         $adminPassword = $config->read('global/admin/password');
 
-        if(empty($adminPassword))
-        {
+        if (empty($adminPassword)) {
             $adminPassword = parent::getPassword($input, $output);
         }
 

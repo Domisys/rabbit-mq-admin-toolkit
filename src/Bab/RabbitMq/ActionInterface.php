@@ -2,7 +2,6 @@
 
 namespace Bab\RabbitMq;
 
-
 interface ActionInterface
 {
     public function __construct(HttpClientInterface $httpClient);
