@@ -35,7 +35,7 @@ abstract class Action implements \Bab\RabbitMq\ActionInterface
 
         foreach ($users as $user) {
             if ($user instanceof Entity\User) {
-                if($user->hasToBeOverwriten() === true && $this->isExistingUser($user) === true) {
+                if(($this->isExistingUser($user) === true && $user->hasToBeOverwriten() === true) || $this->isExistingUser($user) === false) {
                     $userTags = $user->getTags();
                     $parameters = array(
                         'password' => $user->getPassword(),
