@@ -17,11 +17,8 @@ class User
         $this->permissions = $this->extractPermissions($this->getUserValue($user, 'permissions'), $defaultPermissions);
         $this->tags = $this->getUserValue($user, 'tags');
         $overwrite = $this->getUserValue($user, 'overwrite');
-<<<<<<< HEAD
-        $this->overwrite = !is_null($overwrite)?$overwrite:true;
-=======
+
         $this->overwrite = !is_null($overwrite) ? $overwrite : true;
->>>>>>> fix: disallow user overwritting on demand
     }
 
     private function getUserValue(array $user = array(), $key)

@@ -25,13 +25,28 @@ class Location
         return $this->configuration->read(self::LOCATIONS_PATH.'/'.$location);
     }
 
-    public function getClusters()
+    public function getAllRabbitMqInstance()
     {
         $locations = $this->configuration->read(self::LOCATIONS_PATH);
 
         $clusters = array();
         foreach ($locations as $cluster) {
             $clusters = array_unique(array_merge($clusters, $cluster));
+        }
+
+        return $clusters;
+    }
+
+    public function getOneRabbitMqInstanceOfEachClusters()
+    {
+        $locations = $this->configuration->read(self::LOCATIONS_PATH);
+
+        $clusters = array();
+        foreach ($locations as $cluster) {
+            if(array_key_exists(0, $cluster))
+            {
+                $clusters[] = $cluster[0];
+            }
         }
 
         return $clusters;

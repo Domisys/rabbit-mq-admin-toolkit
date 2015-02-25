@@ -24,7 +24,7 @@ class Full implements StrategyInterface
 
     public function configure()
     {
-        $clusters = $this->locations->getClusters();
+        $clusters = $this->locations->getOneRabbitMqInstanceOfEachClusters();
 
         foreach ($clusters as $key => $cluster) {
             $targetClusters = $clusters;

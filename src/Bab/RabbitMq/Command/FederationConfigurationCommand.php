@@ -49,7 +49,7 @@ class FederationConfigurationCommand extends BaseCommand
 
         $allVhosts = $this->getAllVhosts($locations, $config);
 
-        foreach ($locations->getClusters() as $cluster) {
+        foreach ($locations->getAllRabbitMqInstance() as $cluster) {
             $context['host'] = $cluster;
 
             foreach ($allVhosts as $vhost) {
