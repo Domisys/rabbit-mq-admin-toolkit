@@ -24,12 +24,27 @@ class Full implements StrategyInterface
 
     public function configure()
     {
-        $clusters = $this->locations->getOneRabbitMqInstanceOfEachClusters();
+        $locations = $this->locations->getLocations();
 
-        foreach ($clusters as $key => $cluster) {
-            $targetClusters = $clusters;
-            unset($targetClusters[$key]);
-            $this->setUpstreamConfiguration($cluster, $targetClusters);
+        foreach($locations as $currentLocation => $cluster)
+        {
+            if(array_key_exists(0, $cluster))
+            {
+                $rabbitMqInstance = $cluster[0];
+            }
+
+            $rabbitMqTargetInstances = array();
+            foreach($locations as $targetLocation => $cluster)
+            {
+                if($targetLocation === $currentLocation)
+                {
+                    continue;
+                }
+
+                $rabbitMqTargetInstances = array_merge($rabbitMqTargetInstances, $cluster);
+            }
+
+            $this->setUpstreamConfiguration($rabbitMqInstance, $rabbitMqTargetInstances);
         }
     }
 

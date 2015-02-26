@@ -36,19 +36,4 @@ class Location
 
         return $clusters;
     }
-
-    public function getOneRabbitMqInstanceOfEachClusters()
-    {
-        $locations = $this->configuration->read(self::LOCATIONS_PATH);
-
-        $clusters = array();
-        foreach ($locations as $cluster) {
-            if(array_key_exists(0, $cluster))
-            {
-                $clusters[] = $cluster[0];
-            }
-        }
-
-        return $clusters;
-    }
 }
