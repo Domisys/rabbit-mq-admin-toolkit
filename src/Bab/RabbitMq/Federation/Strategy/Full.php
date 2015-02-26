@@ -26,22 +26,25 @@ class Full implements StrategyInterface
     {
         $locations = $this->locations->getLocations();
 
-        foreach($locations as $currentLocation => $cluster)
+        foreach($locations as $key => $currentLocation)
         {
+            $cluster = $this->locations->getClusterByLocation($currentLocation);
+
             if(array_key_exists(0, $cluster))
             {
                 $rabbitMqInstance = $cluster[0];
             }
 
             $rabbitMqTargetInstances = array();
-            foreach($locations as $targetLocation => $cluster)
+            foreach($locations as $targetLocation)
             {
                 if($targetLocation === $currentLocation)
                 {
                     continue;
                 }
+                $targetCluster = $this->locations->getClusterByLocation($targetLocation);
 
-                $rabbitMqTargetInstances = array_merge($rabbitMqTargetInstances, $cluster);
+                $rabbitMqTargetInstances = array_merge($rabbitMqTargetInstances, $targetCluster);
             }
 
             $this->setUpstreamConfiguration($rabbitMqInstance, $rabbitMqTargetInstances);
