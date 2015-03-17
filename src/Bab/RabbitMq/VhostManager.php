@@ -36,6 +36,11 @@ class VhostManager
     {
         $this->action->resetVhost();
     }
+    
+    public function createVhost($vhost)
+    {
+        $this->action->createVhost($vhost);
+    }
 
     public function createUsers(Collection\User $userCollection)
     {

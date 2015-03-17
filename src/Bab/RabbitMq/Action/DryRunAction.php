@@ -13,6 +13,7 @@ class DryRunAction extends Action
     const LABEL_PERMISSION = 'permission';
     const LABEL_POLICY = 'policy';
     const LABEL_USER = 'user';
+    const LABEL_VHOST = 'vhost';
     const LABEL_UPSTREAM = 'upstream';
 
     private $log;
@@ -203,6 +204,22 @@ class DryRunAction extends Action
                 return;
             }
             //No unchanged log could be sent. We cannot compare a password and the hashed persisted one.
+        }
+    }
+    
+    public function createVhost($vhost)
+    {
+        $response = $this->query('GET', '/api/vhosts/'.$vhost);
+        $objectType = self::LABEL_VHOST;
+    
+        if ($response instanceof $response) {
+            if ($response->isNotFound()) {
+                $this->log->addUpdate($objectType, $vhost, array());
+    
+                return;
+            }
+            
+            $this->log->addUnchanged($objectType, $vhost, array());
         }
     }
 

@@ -59,7 +59,8 @@ class FederationConfigurationCommand extends BaseCommand
                 if ($resetConfiguration === true) {
                     $vhostManager->resetVhost();
                 }
-
+                
+                $vhostManager->createVhost($vhost);
                 $vhostManager->createUsers($userCollection);
             }
         }

@@ -132,4 +132,10 @@ class RealAction extends Action
             $parameters
         );
     }
+    
+    public function createVhost($vhost)
+    {
+        $this->log(sprintf('Create vhost <info>%s</info>', $vhost));
+        $this->query('PUT', '/api/vhosts/'.$vhost, array());
+    }
 }

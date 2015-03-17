@@ -29,6 +29,8 @@ interface ActionInterface
     public function createUsers(Collection\User $userCollection);
 
     public function createUser($name, array $parameters = array());
+    
+    public function createVhost($vhost);
 
     public function setUpstreamConfiguration($host, $targetedHost, $vhost, array $parameters = array());
 }
