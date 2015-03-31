@@ -47,9 +47,9 @@ class VhostManager
         $this->action->createUsers($userCollection);
     }
 
-    public function setUpstreamConfiguration($host, $targetedHost, $vhost, $parameters)
+    public function setUpstreamConfiguration($host, $upstreamName, $vhost, $parameters)
     {
-        $this->action->setUpstreamConfiguration($host, $targetedHost, $vhost, $parameters);
+        $this->action->setUpstreamConfiguration($host, $upstreamName, $vhost, $parameters);
     }
 
     /**

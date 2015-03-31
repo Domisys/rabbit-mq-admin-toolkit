@@ -35,36 +35,47 @@ class Full implements StrategyInterface
                 $rabbitMqInstance = $cluster[0];
             }
 
-            $rabbitMqTargetInstances = array();
             foreach($locations as $targetLocation)
             {
                 if($targetLocation === $currentLocation)
                 {
                     continue;
                 }
+                
                 $targetCluster = $this->locations->getClusterByLocation($targetLocation);
-
-                $rabbitMqTargetInstances = array_merge($rabbitMqTargetInstances, $targetCluster);
+                
+                $this->setUpstreamConfiguration($rabbitMqInstance, $targetCluster, $targetLocation);
             }
-
-            $this->setUpstreamConfiguration($rabbitMqInstance, $rabbitMqTargetInstances);
         }
     }
 
-    private function setUpstreamConfiguration($sourceCluster, array $targetClusters = array())
+    private function setUpstreamConfiguration($sourceCluster, array $targetClusters = array(), $targetLocation)
     {
         if (!empty($sourceCluster) && !empty($targetClusters)) {
-            foreach ($targetClusters as $host) {
-                $this->vhostManager->setUpstreamConfiguration($sourceCluster, $host, $this->vhost, $this->getFormatedParameters($host));
-            }
+            $this->vhostManager->setUpstreamConfiguration($sourceCluster, $this->getFormatedUpstreamName($targetLocation), $this->vhost, $this->getFormatedParameters($targetClusters));
         }
     }
-
-    private function getFormatedParameters($cluster)
+    
+    private function getFormatedUpstreamName($name)
     {
+        return sprintf(
+            'upstream%s',
+            ucfirst(strtolower($name))
+        );
+    }
+
+    private function getFormatedParameters(array $cluster)
+    {
+        $clusterHosts = array();
+        
+        foreach($cluster as $clusterHost)
+        {
+            $clusterHosts[] = $this->formatUri($clusterHost);
+        }
+        
         return array(
             'value' => array(
-                'uri' => $this->formatUri($cluster),
+                'uri' => $clusterHosts,
                 'expires' => $this->config->readRequired('global/federation/upstream/expires'),
                 'ack-mode' => $this->config->readRequired('global/federation/upstream/ack-mode'),
                 'trust-user-id' => true,

@@ -223,7 +223,7 @@ class DryRunAction extends Action
         }
     }
 
-    public function setUpstreamConfiguration($host, $targetedHost, $vhost, array $parameters = array())
+    public function setUpstreamConfiguration($host, $upstreamName, $vhost, array $parameters = array())
     {
         $this->httpClient->switchHost($host);
         $currentComponent = $this->query(
@@ -231,11 +231,11 @@ class DryRunAction extends Action
             sprintf(
                 '/api/parameters/federation-upstream/%s/%s',
                 $vhost,
-                $targetedHost
+                $upstreamName
             )
         );
         $objectType = self::LABEL_UPSTREAM;
-        $objectName = $targetedHost;
+        $objectName = $upstreamName;
 
         if ($currentComponent instanceof Response && $currentComponent->isSuccessful() === true) {
             $currentComponent = json_decode($currentComponent->body, true);
