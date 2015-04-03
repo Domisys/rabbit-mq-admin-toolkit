@@ -32,5 +32,5 @@ interface ActionInterface
     
     public function createVhost($vhost);
 
-    public function setUpstreamConfiguration($host, $targetedHost, $vhost, array $parameters = array());
+    public function setUpstreamConfiguration($host, $upstreamName, $vhost, array $parameters = array());
 }

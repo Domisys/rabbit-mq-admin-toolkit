@@ -13,12 +13,12 @@ class Yaml implements ConfigurationInterface
     private $hasDeadLetterExchange;
     private $hasUnroutableExchange;
 
-    public function __construct($filePath)
+    public function __construct($filePath, $vhost)
     {
         $configuration = $this->readFromFile($filePath);
-
-        $this->vhost = key($configuration);
-        $this->config = current($configuration);
+        
+        $this->vhost = $vhost;
+        $this->config = $configuration[$vhost];
 
         $this->initParameters();
     }

@@ -52,25 +52,32 @@ class RealAction extends Action
 
     public function createExchange($name, $parameters)
     {
-        $this->log(sprintf('Create exchange <info>%s</info>', $name));
+        $vhost = $this->getContextValue('vhost');
+        
+        $this->log(sprintf('Create exchange <info>%s</info> on vhost <info>%s</info>', $name, $vhost));
 
-        return $this->query('PUT', '/api/exchanges/'.$this->getContextValue('vhost').'/'.$name, $parameters);
+        return $this->query('PUT', '/api/exchanges/'.$vhost.'/'.$name, $parameters);
     }
 
     public function createQueue($name, $parameters)
     {
-        $this->log(sprintf('Create queue <info>%s</info>', $name));
+        $vhost = $this->getContextValue('vhost');
+        
+        $this->log(sprintf('Create queue <info>%s</info> on vhost <info>%s</info>', $name, $vhost));
 
-        return $this->query('PUT', '/api/queues/'.$this->getContextValue('vhost').'/'.$name, $parameters);
+        return $this->query('PUT', '/api/queues/'.$vhost.'/'.$name, $parameters);
     }
 
     public function createBinding($name, $queue, $routingKey, array $arguments = array())
     {
+        $vhost = $this->getContextValue('vhost');
+        
         $this->log(sprintf(
-            'Create binding between exchange <info>%s</info> and queue <info>%s</info> (with routing_key: <info>%s</info>)',
+            'Create binding between exchange <info>%s</info> and queue <info>%s</info> (with routing_key: <info>%s</info>) on vhost <info>%s</info>',
             $name,
             $queue,
-            null !== $routingKey ? $routingKey : 'none'
+            null !== $routingKey ? $routingKey : 'none',
+            $vhost
         ));
 
         $parameters = array(
@@ -81,7 +88,7 @@ class RealAction extends Action
             $parameters['routing_key'] = $routingKey;
         }
 
-        return $this->query('POST', '/api/bindings/'.$this->getContextValue('vhost').'/e/'.$name.'/q/'.$queue, $parameters);
+        return $this->query('POST', '/api/bindings/'.$vhost.'/e/'.$name.'/q/'.$queue, $parameters);
     }
 
     public function setPermissions($user, array $parameters = array())
@@ -103,13 +110,16 @@ class RealAction extends Action
 
     public function createPolicy($name, array $parameters = array())
     {
+        $vhost = $this->getContextValue('vhost');
+        
         $this->log(sprintf(
-            'Create policy <info>%s</info> with following definition <info>%s</info>',
+            'Create policy <info>%s</info> with following definition <info>%s</info> on vhost <info>%s</info>',
             $name,
-            json_encode($parameters)
+            json_encode($parameters),
+            $vhost
         ));
 
-        $this->query('PUT', '/api/policies/'.$this->getContextValue('vhost').'/'.$name, $parameters);
+        $this->query('PUT', '/api/policies/'.$vhost.'/'.$name, $parameters);
     }
 
     public function createUser($name, array $parameters = array())
@@ -118,7 +128,7 @@ class RealAction extends Action
         $this->query('PUT', '/api/users/'.$name, $parameters);
     }
 
-    public function setUpstreamConfiguration($host, $targetedHost, $vhost, array $parameters = array())
+    public function setUpstreamConfiguration($host, $upstreamName, $vhost, array $parameters = array())
     {
         $this->httpClient->switchHost($host);
         $this->log(sprintf('Create upstream configuration <info>%s</info> on host <info>%s</info>', json_encode($parameters), $host));
@@ -127,7 +137,7 @@ class RealAction extends Action
             sprintf(
                 '/api/parameters/federation-upstream/%s/%s',
                 $vhost,
-                $targetedHost
+                $upstreamName
             ),
             $parameters
         );
@@ -135,6 +145,11 @@ class RealAction extends Action
     
     public function createVhost($vhost)
     {
+        if($vhost === '/')
+        {
+            $vhost = '%2f';
+        }
+        
         $this->log(sprintf('Create vhost <info>%s</info>', $vhost));
         $this->query('PUT', '/api/vhosts/'.$vhost, array());
     }

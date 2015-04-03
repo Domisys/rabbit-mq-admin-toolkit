@@ -68,14 +68,20 @@ class FederationConfigurationCommand extends BaseCommand
         foreach ($locations->getLocations() as $location) {
             foreach ($locations->getClusterByLocation($location) as $cluster) {
                 $context['host'] = $cluster;
-                $vhostsConfiguration = $config->readRequired($location);
 
+                foreach ($allVhosts as $vhost) {
+                    $context['vhost'] = $vhost;
+                    $vhostManager = $this->instanciateVhostManager($input, $output, $context);
+
+                    $this->createMapping($vhostManager, $this->constructFilePath($configDirectory, 'shared.yml'), $vhost);
+                }
+
+                $vhostsConfiguration = $config->readRequired($location);
                 foreach (array_keys($vhostsConfiguration) as $vhost) {
                     $context['vhost'] = $vhost;
                     $vhostManager = $this->instanciateVhostManager($input, $output, $context);
 
-                    $this->createMapping($vhostManager, $this->constructFilePath($configDirectory, 'shared.yml'));
-                    $this->createMapping($vhostManager, $this->constructFilePath($configDirectory, $location.'.yml'));
+                    $this->createMapping($vhostManager, $this->constructFilePath($configDirectory, $location.'.yml'), $vhost);
                 }
             }
         }
@@ -142,9 +148,9 @@ class FederationConfigurationCommand extends BaseCommand
         }
     }
 
-    private function createMapping(VhostManager $vhostManager, $configurationFilePath)
+    private function createMapping(VhostManager $vhostManager, $configurationFilePath, $vhost)
     {
-        $configuration = new Configuration\Yaml($configurationFilePath);
+        $configuration = new Configuration\Yaml($configurationFilePath, $vhost);
         $vhostManager->createMapping($configuration);
     }
 
