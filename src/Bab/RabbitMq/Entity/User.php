@@ -59,8 +59,16 @@ class User
     {
         if (!empty($userPermissions) && is_array($userPermissions)) {
             foreach (array_keys($permissions) as $permission) {
-                if (!empty($userPermissions[$permission])) {
-                    $permissions[$permission] = $userPermissions[$permission];
+                if (array_key_exists($permission, $userPermissions))
+                {
+                    $value = $userPermissions[$permission];
+                    
+                    if(empty($value))
+                    {
+                        $value = "";
+                    }
+                    
+                    $permissions[$permission] = $value;
                 }
             }
         }
