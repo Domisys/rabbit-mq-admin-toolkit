@@ -107,6 +107,34 @@ class VhostManager
             }
 
             $this->createExchange($name, $parameters);
+
+            $bindings = array();
+            if (isset($parameters['bindings'])) {
+                $bindings = $parameters['bindings'];
+            }
+            unset($parameters['bindings']);
+            
+            $disallowGlobalBindings = false;
+            if (isset($parameters['disallow_global_bindings'])) {
+                $disallowGlobalBindings = (bool) $parameters['disallow_global_bindings'];
+            }
+            unset($parameters['disallow_global_bindings']);
+            
+            if($disallowGlobalBindings !== true) {
+                $bindings = array_merge($bindings, $config->getGlobalExchangeToExchangeBindings());
+            }
+            
+            foreach ($bindings as $binding) {
+                if (!is_array($binding) && false !== strpos($binding, ':')) {
+                    $parts = explode(':', $binding);
+                    $binding = [
+                    'toExchange'    => $parts[0],
+                    'routing_key' => $parts[1],
+                    ];
+                }
+                
+                $this->createUserExchangeToExchangeBinding($name, $binding);
+            }
         }
     }
 
@@ -250,6 +278,34 @@ class VhostManager
         $this->createBinding($parameters['exchange'], $bindingName, $parameters['routing_key'], $arguments);
     }
 
+    private function createUserExchangeToExchangeBinding($sourceExchangeName, array $bindingDefinition)
+    {
+        $defaultParameterValues = array(
+            'routing_key' => null,
+            'x-match' => 'all',
+            'matches' => array(),
+        );
+
+        $parameters = array_merge($defaultParameterValues, $bindingDefinition);
+
+        if (! isset($parameters['toExchange'])) {
+            throw new \InvalidArgumentException(sprintf(
+                'Destination exchange is missing in binding for exchange %s',
+                $sourceExchangeName
+            ));
+        }
+
+        $arguments = array();
+        if (! empty($parameters['matches'])) {
+            $arguments = $parameters['matches'];
+            $arguments['x-match'] = $parameters['x-match'];
+        }
+
+        if($sourceExchangeName !== $parameters['toExchange']) {
+            $this->createExchangeToExchangeBinding($sourceExchangeName, $parameters['toExchange'], $parameters['routing_key'], $arguments);
+        }
+    }
+
     /**
      * getQueues
      *
@@ -332,6 +388,11 @@ class VhostManager
     protected function createBinding($exchange, $queue, $routingKey = null, array $arguments = array())
     {
         return $this->action->createBinding($exchange, $queue, $routingKey, $arguments);
+    }
+    
+    protected function createExchangeToExchangeBinding($sourceExchangeName, $destinationExchangeName, $routingKey, array $arguments = array())
+    {
+        return $this->action->createExchangeToExchangeBinding($sourceExchangeName, $destinationExchangeName, $routingKey);
     }
 
     /**

@@ -91,6 +91,29 @@ class RealAction extends Action
         return $this->query('POST', '/api/bindings/'.$vhost.'/e/'.$name.'/q/'.$queue, $parameters);
     }
 
+    public function createExchangeToExchangeBinding($sourceExchangeName, $destinationExchangeName, $routingKey, array $arguments = array())
+    {
+        $vhost = $this->getContextValue('vhost');
+        
+        $this->log(sprintf(
+            'Create binding between exchange <info>%s</info> and exchange <info>%s</info> (with routing_key: <info>%s</info>) on vhost <info>%s</info>',
+            $sourceExchangeName,
+            $destinationExchangeName,
+            null !== $routingKey ? $routingKey : 'none',
+            $vhost
+        ));
+
+        $parameters = array(
+            'arguments' => $arguments,
+        );
+
+        if (! empty($routingKey)) {
+            $parameters['routing_key'] = $routingKey;
+        }
+
+        return $this->query('POST', '/api/bindings/'.$vhost.'/e/'.$sourceExchangeName.'/e/'.$destinationExchangeName, $parameters);
+    }
+
     public function setPermissions($user, array $parameters = array())
     {
         $this->log(sprintf('Grant following permissions for user <info>%s</info> on vhost <info>%s</info>: <info>%s</info>', $user, $this->getContextValue('vhost'), json_encode($parameters)));

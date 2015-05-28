@@ -12,6 +12,7 @@ class Yaml implements ConfigurationInterface
     private $vhost;
     private $hasDeadLetterExchange;
     private $hasUnroutableExchange;
+    private $globalExchangeToExchangeBindings;
 
     public function __construct($filePath, $vhost)
     {
@@ -41,6 +42,12 @@ class Yaml implements ConfigurationInterface
 
         $this->hasDeadLetterExchange = (bool) $this->getValue($parameters, 'with_dl');
         $this->hasUnroutableExchange = (bool) $this->getValue($parameters, 'with_unroutable');
+        
+        $this->globalExchangeToExchangeBindings = array();
+        $value = $this->getValue($parameters, 'global_exchange_to_exchange_bindings');
+        if(!empty($value)) {
+            $this->globalExchangeToExchangeBindings = $value;
+        }
     }
 
     public function getVhost()
@@ -56,6 +63,11 @@ class Yaml implements ConfigurationInterface
     public function hasUnroutableExchange()
     {
         return $this->hasUnroutableExchange;
+    }
+    
+    public function getGlobalExchangeToExchangeBindings()
+    {
+        return $this->globalExchangeToExchangeBindings;
     }
 
     public function offsetExists($offset)

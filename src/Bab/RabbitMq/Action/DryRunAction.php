@@ -98,6 +98,41 @@ class DryRunAction extends Action
             }
         }
     }
+    
+    public function createExchangeToExchangeBinding($sourceExchangeName, $destinationExchangeName, $routingKey, array $arguments = array())
+    {
+        $vhost = $this->getContextValue('vhost');
+        $bindingName = $sourceExchangeName.':'.$routingKey.' -> '.$destinationExchangeName;
+        
+        $response = $this->query('GET', '/api/bindings/'.$vhost.'/e/'.$sourceExchangeName.'/e/'.$destinationExchangeName);
+
+        if (!$response->isSuccessful()) {
+            $this->log->addUpdate(self::LABEL_BINDING, $bindingName, $arguments);
+
+            return;
+        }
+        
+        $binding = array(
+            'source' => $sourceExchangeName,
+            'destination' => $destinationExchangeName,
+            'vhost' => $vhost === '%2f' ? '/' : $vhost,
+            'routing_key' => is_null($routingKey) ? '' : $routingKey,
+            'arguments' => $arguments,
+        );
+
+        $bindings = json_decode($response->body, true);
+        foreach ($bindings as $existingBinding) {
+            $configurationDelta = $this->array_diff_assoc_recursive($binding, $existingBinding);
+
+            if (empty($configurationDelta)) {
+                $this->log->addUnchanged(self::LABEL_BINDING, $bindingName, $arguments);
+
+                return;
+            }
+            
+            $this->log->addUpdate(self::LABEL_BINDING, $bindingName, $arguments);
+        }
+    }
 
     public function setPermissions($user, array $parameters = array())
     {

@@ -9,6 +9,8 @@ interface ConfigurationInterface extends \ArrayAccess
     public function hasDeadLetterExchange();
 
     public function hasUnroutableExchange();
+    
+    public function getGlobalExchangeToExchangeBindings();
 
     public function offsetExists($offset);
 

@@ -13,6 +13,8 @@ interface ActionInterface
     public function createQueue($name, $parameters);
 
     public function createBinding($name, $queue, $routingKey, array $arguments = array());
+    
+    public function createExchangeToExchangeBinding($sourceExchangeName, $destinationExchangeName, $routingKey, array $arguments = array());
 
     public function createPolicy($name, array $parameters = array());
 
