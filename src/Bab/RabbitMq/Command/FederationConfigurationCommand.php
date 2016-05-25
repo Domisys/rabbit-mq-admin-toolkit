@@ -31,7 +31,7 @@ class FederationConfigurationCommand extends BaseCommand
     {
         $configDirectory = $input->getArgument('configDirectory');
         $config = $this->retrieveConfiguration($configDirectory);
-
+        $configurationSharedFilePath = $this->constructFilePath($configDirectory, 'shared.yml');
         $resetConfiguration = $input->getOption('hard-reset');
 
         $locations = new Collection\Location($config);
@@ -59,7 +59,7 @@ class FederationConfigurationCommand extends BaseCommand
                 if ($resetConfiguration === true) {
                     $vhostManager->resetVhost();
                 }
-                
+
                 $vhostManager->createVhost($vhost);
                 $vhostManager->createUsers($userCollection);
             }
@@ -68,12 +68,13 @@ class FederationConfigurationCommand extends BaseCommand
         foreach ($locations->getLocations() as $location) {
             foreach ($locations->getClusterByLocation($location) as $cluster) {
                 $context['host'] = $cluster;
+                $configurationFilePath = $this->constructFilePath($configDirectory, $location.'.yml');
 
                 foreach ($allVhosts as $vhost) {
                     $context['vhost'] = $vhost;
                     $vhostManager = $this->instanciateVhostManager($input, $output, $context);
 
-                    $this->createMapping($vhostManager, $this->constructFilePath($configDirectory, 'shared.yml'), $vhost);
+                    $this->createMapping($vhostManager, $configurationSharedFilePath, $vhost);
                 }
 
                 $vhostsConfiguration = $config->readRequired($location);
@@ -81,7 +82,8 @@ class FederationConfigurationCommand extends BaseCommand
                     $context['vhost'] = $vhost;
                     $vhostManager = $this->instanciateVhostManager($input, $output, $context);
 
-                    $this->createMapping($vhostManager, $this->constructFilePath($configDirectory, $location.'.yml'), $vhost);
+                    $this->createMapping($vhostManager, $configurationFilePath, $vhost);
+                    $this->createExchangeToExchange($vhostManager, $configurationFilePath, $configurationSharedFilePath, $vhost);
                 }
             }
         }
@@ -89,6 +91,14 @@ class FederationConfigurationCommand extends BaseCommand
         if (isset($vhostManager) && $vhostManager instanceof VhostManager) {
             $this->setFederationConfiguration($vhostManager, $locations, $config, $context);
         }
+    }
+
+    private function createExchangeToExchange(VhostManager $vhostManager, $configurationFilePath, $configurationSharedFilePath, $vhost)
+    {
+        $configuration = new Configuration\Yaml($configurationFilePath, $vhost);
+        $configurationShared = new Configuration\Yaml($configurationSharedFilePath, $vhost);
+
+        $vhostManager->createExchangeToExchange($configuration, $configurationShared);
     }
 
     private function getAllVhosts(Collection\Location $locations, \Puzzle\Configuration $config)
