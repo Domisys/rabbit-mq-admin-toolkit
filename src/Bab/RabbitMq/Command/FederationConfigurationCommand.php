@@ -49,6 +49,17 @@ class FederationConfigurationCommand extends BaseCommand
 
         $allVhosts = $this->getAllVhosts($locations, $config);
 
+        if ($resetConfiguration === true) {
+            foreach ($locations->getAllRabbitMqInstance() as $cluster) {
+                $context['host'] = $cluster;
+                foreach ($allVhosts as $vhost) {
+                    $context['vhost'] = $vhost;
+                    $vhostManager = $this->instanciateVhostManager($input, $output, $context);
+                    $vhostManager->removePolicies();
+                }
+            }
+        }
+
         foreach ($locations->getAllRabbitMqInstance() as $cluster) {
             $context['host'] = $cluster;
 
