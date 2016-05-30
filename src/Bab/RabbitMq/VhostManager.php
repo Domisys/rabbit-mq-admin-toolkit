@@ -68,6 +68,65 @@ class VhostManager
         $this->setPolicies($config);
     }
 
+    public function createExchangeToExchange(ConfigurationInterface $configuration, ConfigurationInterface $configurationShared)
+    {
+        $exchanges = array();
+
+        if (!empty($configuration['exchanges'])) {
+            $exchanges = $configuration['exchanges'];
+        }
+
+        if (!empty($configurationShared['exchanges'])) {
+            $exchanges = array_merge($exchanges, $configurationShared['exchanges']);
+        }
+
+        foreach ($exchanges as $name => $parameters) {
+            $bindings = array();
+            if (isset($parameters['bindings'])) {
+                $bindings = $parameters['bindings'];
+            }
+            unset($parameters['bindings']);
+
+            $disallowGlobalBindings = false;
+            if (isset($parameters['disallow_global_bindings'])) {
+                $disallowGlobalBindings = (bool) $parameters['disallow_global_bindings'];
+            }
+            unset($parameters['disallow_global_bindings']);
+
+            if ($disallowGlobalBindings !== true) {
+                $bindings = array_merge($bindings, $this->buildExchangeToExchangeBindings($configuration, $name));
+            }
+
+            foreach ($bindings as $binding) {
+                if (!is_array($binding) && false !== strpos($binding, ':')) {
+                    $parts = explode(':', $binding);
+                    $binding = [
+                        'toExchange'    => $parts[0],
+                        'routing_key' => $parts[1],
+                    ];
+                }
+
+                $this->createUserExchangeToExchangeBinding($name, $binding);
+            }
+        }
+    }
+
+    private function buildExchangeToExchangeBindings(ConfigurationInterface $config, $exchangeName)
+    {
+        $globalExchanges = $config->getGlobalExchangeToExchangeBindings();
+        foreach ($globalExchanges as $index => $globalExchange)
+        {
+            if (!isset($globalExchange['exchangePattern']) || preg_match($globalExchange['exchangePattern'], $exchangeName))
+            {
+                continue;
+            }
+
+            unset($globalExchanges[$index]);
+        }
+
+        return $globalExchanges;
+    }
+
     private function createBaseStructure(ConfigurationInterface $config)
     {
         $this->log(sprintf('With DL: <info>%s</info>', $config->hasDeadLetterExchange() === true ? 'true' : 'false'));
@@ -107,34 +166,6 @@ class VhostManager
             }
 
             $this->createExchange($name, $parameters);
-
-            $bindings = array();
-            if (isset($parameters['bindings'])) {
-                $bindings = $parameters['bindings'];
-            }
-            unset($parameters['bindings']);
-            
-            $disallowGlobalBindings = false;
-            if (isset($parameters['disallow_global_bindings'])) {
-                $disallowGlobalBindings = (bool) $parameters['disallow_global_bindings'];
-            }
-            unset($parameters['disallow_global_bindings']);
-            
-            if($disallowGlobalBindings !== true) {
-                $bindings = array_merge($bindings, $config->getGlobalExchangeToExchangeBindings());
-            }
-            
-            foreach ($bindings as $binding) {
-                if (!is_array($binding) && false !== strpos($binding, ':')) {
-                    $parts = explode(':', $binding);
-                    $binding = [
-                    'toExchange'    => $parts[0],
-                    'routing_key' => $parts[1],
-                    ];
-                }
-                
-                $this->createUserExchangeToExchangeBinding($name, $binding);
-            }
         }
     }
 
